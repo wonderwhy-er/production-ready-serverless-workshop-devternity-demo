@@ -49,7 +49,12 @@ let restaurants = [
 ];
 
 const getTableName = async () => {
-  return `restaurants-${STAGE}-wonderwhy`
+    console.log('getting table name...')
+    const req = {
+        Name: `/workshop-wonderwhy/${STAGE}/table_name`
+    }
+    const ssmResp = await ssm.getParameter(req).promise()
+    return ssmResp.Parameter.Value
 }
 
 const run = async () => {
