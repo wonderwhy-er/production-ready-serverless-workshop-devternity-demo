@@ -44,6 +44,7 @@
         flex-flow: column;
         flex-wrap: wrap;
         justify-content: center;
+        position: relative;
       }
       .row-container {
         padding: 5px;
@@ -118,6 +119,30 @@
         margin-top:25px; 
       }
 
+      .column-container.sent, .column-container.sending {
+        pointer-events: none;
+      }
+
+      .column-container.sending:after {
+        content: 'Sending';
+        position: absolute;
+        text-align: center;
+        width: 100%;
+        color: white;
+        background-color: rgba(0,0,0,0.4);
+        padding: 5px 0;
+      }
+
+      .column-container.sent:after {
+        content: 'Sent';
+        position: absolute;
+        text-align: center;
+        width: 100%;
+        color: white;
+        background-color: rgba(0,0,0,0.4);
+        padding: 5px 0;
+      }
+
     </style>
 
     <script>
@@ -141,7 +166,7 @@
             for (var restaurant of restaurants) {
               restaurantsList.append(`
               <li class="restaurant">
-                <ul class="column-container" onclick='placeOrder("${restaurant.name}")'>
+                <ul class="column-container" onclick='placeOrder("${restaurant.name}", event)'>
                     <li class="item restaurant-name">${restaurant.name}</li>
                     <li class="item restaurant-image">
                       <img src="${restaurant.image}">
@@ -157,15 +182,18 @@
         };
       }
 
-      function placeOrder(restaurantName) {
+      function placeOrder(restaurantName, event) {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', PLACE_ORDER_URL, true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify({ restaurantName }));
+        var target = event.currentTarget;
+        target.classList.add('sending');
 
         xhr.onreadystatechange = function (e) {
           if (xhr.readyState === 4 && xhr.status === 200) {
-            alert("your order has been placed, we'll let you know once it's been accepted by the restaurant!");
+              target.classList.add('sent');
+              target.classList.remove('sending');
           } else if (xhr.readyState === 4) {
             alert(xhr.responseText);
           }
@@ -194,7 +222,7 @@
             <ul id="restaurantsUl" class="row-container">
               {{#restaurants}}
               <li class="restaurant">
-                <ul class="column-container" onclick='placeOrder("{{name}}")'>
+                <ul class="column-container" onclick='placeOrder("{{name}}",event)'>
                     <li class="item restaurant-name">{{name}}</li>
                     <li class="item restaurant-image">
                       <img src="{{image}}">
