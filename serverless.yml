@@ -2,6 +2,7 @@ service: workshop-wonderwhy
 
 plugins:
   - serverless-pseudo-parameters
+  - serverless-iam-roles-per-function
 
 provider:
   name: aws
@@ -10,24 +11,14 @@ provider:
   region: eu-west-1
   tags:
     TEAM: test
+  environment:
+    log_level: ${self:custom.logLevel.${self:custom.stage}, self:custom.logLevel.default}
 
-  iamRoleStatements:
-    - Effect: Allow
-      Action: dynamodb:scan
-      Resource:
-        Fn::GetAtt:
-          - restaurantsTable
-          - Arn
-    - Effect: Allow
-      Action: kinesis:PutRecord
-      Resource: 
-        Fn::GetAtt:
-          - orderEventsStream
-          - Arn
-    - Effect: Allow
-      Action: sns:Publish
-      Resource: 
-        Ref: restaurantNotificationTopic
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  logLevel:
+    prod: INFO
+    default: DEBUG
 
 functions:
   get-index:
@@ -52,6 +43,13 @@ functions:
 
   get-restaurants:
     handler: functions/get-restaurants.handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:scan
+        Resource:
+          Fn::GetAtt:
+            - restaurantsTable
+            - Arn
     events:
       - http:
           path: /restaurants/
@@ -62,6 +60,13 @@ functions:
 
   search-restaurants:
     handler: functions/search-restaurants.handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:scan
+        Resource:
+          Fn::GetAtt:
+            - restaurantsTable
+            - Arn
     events:
       - http:
           path: /restaurants/search
@@ -72,6 +77,13 @@ functions:
 
   place-order:
     handler: functions/place-order.handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action: kinesis:PutRecord
+        Resource:
+          Fn::GetAtt:
+            - orderEventsStream
+            - Arn
     events:
       - http:
           path: /orders
@@ -82,6 +94,17 @@ functions:
 
   notify-restaurant:
     handler: functions/notify-restaurant.handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action: kinesis:PutRecord
+        Resource:
+          Fn::GetAtt:
+            - orderEventsStream
+            - Arn
+      - Effect: Allow
+        Action: sns:Publish
+        Resource:
+          Ref: restaurantNotificationTopic
     events:
       - stream:
           type: kinesis
